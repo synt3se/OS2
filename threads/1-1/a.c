@@ -10,7 +10,7 @@
 #define RETVAL_SUCCESS ((void*)0)
 #define SUCCESS 0
 
-void *mythread(void *arg) {
+void *mythread() {
 	printf("thread: PID=%d, PPID=%d, TID=%d\n", getpid(), getppid(), gettid());
 	return RETVAL_SUCCESS;
 }

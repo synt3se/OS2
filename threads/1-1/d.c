@@ -14,17 +14,17 @@
 int global_var = 13;
 
 void *mythread(void *arg) {
-	int thread_num = (int)arg;
+	size_t thread_num = (size_t)arg;
 
 	int local_var = 1;
 
-	printf("thread %d before changes: local[%p]=%d, global[%p]=%d\n", thread_num,
+	printf("thread %zu before changes: local[%p]=%d, global[%p]=%d\n", thread_num,
 		(void*)&local_var, local_var, (void*)&global_var, global_var);
 
 	++local_var;
 	--global_var;
 
-	printf("thread %d after changes: local[%p]=%d, global[%p]=%d\n", thread_num,
+	printf("thread %zu after changes: local[%p]=%d, global[%p]=%d\n", thread_num,
 		(void*)&local_var, local_var, (void*)&global_var, global_var);
 
 	return RETVAL_SUCCESS;
@@ -36,13 +36,14 @@ int main() {
 
 	printf("main: PID=%d, PPID=%d, TID=%d\n", getpid(), getppid(), gettid());
 
-	for (int thread_num = 0; thread_num < NTHREADS; thread_num++) {
+	for (size_t thread_num = 0; thread_num < NTHREADS; thread_num++) {
 		err = pthread_create(&threads[thread_num], NULL, mythread, (void*)thread_num);
 		if (err != SUCCESS) {
 			printf("main: pthread_create() failed: %s\n", strerror(err));
 			return EXIT_FAILURE;
 		}
-		printf("main: thread %d created, threads[thread_num]=%lu\n", thread_num, threads[thread_num]);
+		printf("main: thread %zu created, threads[thread_num]=%lu\n",
+			thread_num, threads[thread_num]);
 	}
 
 	printf("main: cat /proc/%d/maps\n", getpid());
