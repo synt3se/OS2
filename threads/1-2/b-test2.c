@@ -11,19 +11,13 @@
 
 void *thread_routine() {
     printf("thread: TID=%d\n", gettid());
-
-    int *ret = malloc(sizeof(int));
-    if (ret == NULL) {
-        perror("malloc");
-        exit(EXIT_FAILURE);
-    }
-    *ret = 42;
-    return ((void*)ret);
+    int ret_num = 42;
+    return ((void*)&ret_num);
 }
 
 int main() {
     pthread_t tid;
-    int* res;
+    size_t* res;
     int err;
 
     printf("main: PID=%d, PPID=%d, TID=%d\n", getpid(), getppid(), gettid());
@@ -39,9 +33,8 @@ int main() {
         printf("main: pthread_join() failed: %s\n", strerror(err));
         return EXIT_FAILURE;
     }
-    printf("thread returned: %d\n", *res);
+    printf("thread returned: %zu\n", *res);
 
-    free(res);
     return EXIT_SUCCESS;
 }
 

@@ -13,7 +13,7 @@
 void *thread_routine() {
     printf("thread: TID=%d\n", gettid());
 
-    char *ret = malloc(strlen(STR) * sizeof(char));
+    char *ret = malloc((strlen(STR) + 1) * sizeof(char));
     if (ret == NULL) {
         perror("malloc");
         exit(EXIT_FAILURE);
