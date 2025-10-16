@@ -17,25 +17,6 @@ struct mydata {
     char *str;
 };
 
-int init_attr_detached(pthread_attr_t *attr) {
-    int err;
-
-    err = pthread_attr_init(attr);
-    if (err != SUCCESS) {
-        perror("pthread_attr_init");
-        return EXIT_FAILURE;
-    }
-
-    err = pthread_attr_setdetachstate(attr, PTHREAD_CREATE_DETACHED);
-    if (err != SUCCESS) {
-        perror("pthread_attr_setdetachstate");
-        pthread_attr_destroy(attr);
-        return EXIT_FAILURE;
-    }
-
-    return SUCCESS;
-}
-
 struct mydata *init_mydata(int num, const char *s) {
     if (s == NULL) {
         printf("allocate_mydata: s == NULL\n");
@@ -69,32 +50,19 @@ void *thread_routine(void *arg) {
 
 int main() {
     pthread_t tid;
-    pthread_attr_t attr;
     int err;
     printf("main: PID=%d, PPID=%d, TID=%d\n", getpid(), getppid(), gettid());
 
-    err = init_attr_detached(&attr);
-    if (err != SUCCESS) {
-        return EXIT_FAILURE;
-    }
-
     struct mydata *data = init_mydata(NUM, STR);
     if (data == NULL) {
-        pthread_attr_destroy(&attr);
         return EXIT_FAILURE;
     }
 
-    err = pthread_create(&tid, &attr, thread_routine, data);
+    err = pthread_create(&tid, NULL, thread_routine, data);
     if (err != SUCCESS) {
         printf("main: pthread_create() failed: %s\n", strerror(err));
-        pthread_attr_destroy(&attr);
         free(data->str);
         free(data);
-        return EXIT_FAILURE;
-    }
-    err = pthread_attr_destroy(&attr);
-    if (err != SUCCESS) {
-        perror("pthread_attr_destroy");
         return EXIT_FAILURE;
     }
 
