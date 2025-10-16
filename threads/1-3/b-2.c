@@ -22,13 +22,13 @@ int init_attr_detached(pthread_attr_t *attr) {
 
     err = pthread_attr_init(attr);
     if (err != SUCCESS) {
-        perror("pthread_attr_init");
+        printf("main: pthread_attr_init() failed: %s\n", strerror(err));
         return EXIT_FAILURE;
     }
 
     err = pthread_attr_setdetachstate(attr, PTHREAD_CREATE_DETACHED);
     if (err != SUCCESS) {
-        perror("pthread_attr_setdetachstate");
+        printf("main: pthread_attr_setdetachstate() failed: %s\n", strerror(err));
         pthread_attr_destroy(attr);
         return EXIT_FAILURE;
     }
@@ -44,14 +44,14 @@ struct mydata *init_mydata(int num, const char *s) {
 
     struct mydata *data = (struct mydata *)malloc(sizeof(struct mydata));
     if (data == NULL) {
-        printf("allocate_mydata: malloc failed\n");
+        perror("malloc struct mydata");
         return NULL;
     }
 
     data->num = num;
     data->str = malloc((strlen(s) + 1) * sizeof(char));
     if (data->str == NULL) {
-        printf("allocate_mydata: malloc failed\n");
+        perror("malloc str");
         free(data);
         return NULL;
     }
@@ -94,7 +94,7 @@ int main() {
     }
     err = pthread_attr_destroy(&attr);
     if (err != SUCCESS) {
-        perror("pthread_attr_destroy");
+        printf("main: pthread_attr_destroy() failed: %s\n", strerror(err));
         return EXIT_FAILURE;
     }
 

@@ -30,12 +30,12 @@ int main() {
 
     err = pthread_attr_init(&attr);
     if (err != SUCCESS) {
-        perror("pthread_attr_init");
+        printf("main: pthread_attr_init() failed: %s\n", strerror(err));
         return EXIT_FAILURE;
     }
     err = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
     if (err != SUCCESS) {
-        perror("pthread_attr_setdetachstate");
+        printf("main: pthread_attr_setdetachstate() failed: %s\n", strerror(err));
         pthread_attr_destroy(&attr);
         return EXIT_FAILURE;
     }
@@ -52,7 +52,7 @@ int main() {
     }
     err = pthread_attr_destroy(&attr);
     if (err != SUCCESS) {
-        perror("pthread_attr_destroy");
+        printf("main: pthread_attr_destroy() failed: %s\n", strerror(err));
         return EXIT_FAILURE;
     }
 
