@@ -10,9 +10,10 @@
 #define SUCCESS 0
 
 void *thread_routine() {
-    for (int j = 1; ; ++j) {
+    int j = 0;
+    while (1) {
         printf("thread: j=%d\n", j);
-        // sleep(1);
+        ++j;
     }
     return ((void*)0);
 }
@@ -43,12 +44,11 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    if (res == PTHREAD_CANCELED) {
-        printf("main: thread was canceled\n");
-    } else {
+    if (res != PTHREAD_CANCELED) {
         printf("main: thread was not canceled (?)\n");
+        return EXIT_FAILURE;
     }
-    // printf("thread returned %ld\n", (size_t) res);
+    printf("main: thread was canceled\n");
 
     return EXIT_SUCCESS;
 }
