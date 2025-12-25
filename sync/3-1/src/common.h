@@ -13,6 +13,8 @@
 
 #define BUFFER_SIZE 4096
 #define MAX_RETRIES 10
+#define SUCCESS 0
+#define ERROR -1
 
 typedef struct {
     char *src_path;

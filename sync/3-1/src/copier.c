@@ -7,17 +7,17 @@ thread_args_t *init_args(const char *src, const char *dst) {
     char src_path[PATH_MAX];
     char dst_dir[PATH_MAX];
     int err = get_realpath(src, src_path);
-    if (err != 0) return NULL;
+    if (err != SUCCESS) return NULL;
     err = get_realpath(dst, dst_dir);
-    if (err != 0) return NULL;
+    if (err != SUCCESS) return NULL;
 
     err = is_dir(src_path);
-    if (err != 0) return NULL;
+    if (err != SUCCESS) return NULL;
     err = is_dir(dst_dir);
-    if (err != 0) return NULL;
+    if (err != SUCCESS) return NULL;
 
     const char *src_name = strrchr(src_path, '/');
-    src_name = (src_name != NULL) ? src_name + 1 : src_path;
+    src_name = src_name + 1;
 
     char dst_path[PATH_MAX];
     int len = snprintf(dst_path, PATH_MAX, "%s/%s", dst_dir, src_name);
@@ -45,7 +45,7 @@ int create_task(void *(*routine)(void *), const char *src, const char *dst) {
     thread_args_t *args = malloc(sizeof(thread_args_t));
     if (args == NULL) {
         perror("malloc");
-        return -1;
+        return ERROR;
     }
 
     args->src_path = strdup(src);
@@ -53,7 +53,7 @@ int create_task(void *(*routine)(void *), const char *src, const char *dst) {
     if (args->src_path == NULL || args->dst_path == NULL) {
         perror("strdup");
         thread_args_free(args);
-        return -1;
+        return ERROR;
     }
 
     pthread_attr_t attr;
@@ -61,7 +61,7 @@ int create_task(void *(*routine)(void *), const char *src, const char *dst) {
     if (err != 0) {
         fprintf(stderr, "pthread_attr_init: %s\n", strerror(err));
         thread_args_free(args);
-        return -1;
+        return ERROR;
     }
 
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
@@ -70,13 +70,13 @@ int create_task(void *(*routine)(void *), const char *src, const char *dst) {
     err = pthread_create(&thread, &attr, routine, args);
     pthread_attr_destroy(&attr);
 
-    if (err != 0) {
+    if (err != SUCCESS) {
         fprintf(stderr, "pthread_create: %s\n", strerror(err));
         thread_args_free(args);
-        return -1;
+        return ERROR;
     }
 
-    return 0;
+    return SUCCESS;
 }
 
 int process_entry(const char *src_dir, const char *dst_dir, const char *name) {
@@ -84,13 +84,13 @@ int process_entry(const char *src_dir, const char *dst_dir, const char *name) {
     char dst_path[PATH_MAX];
     struct stat stat_buf;
     int err = build_path(src_path, sizeof(src_path), src_dir, name);
-    if (err != 0) return -1;
+    if (err != SUCCESS) return ERROR;
     err = build_path(dst_path, sizeof(dst_path), dst_dir, name);
-    if (err != 0) return -1;
+    if (err != SUCCESS) return ERROR;
     err = lstat(src_path, &stat_buf);
-    if (err != 0) {
+    if (err != SUCCESS) {
         fprintf(stderr, "Error stating path: %s\n", src_path);
-        return -1;
+        return ERROR;
     }
 
     if (S_ISDIR(stat_buf.st_mode)) {
@@ -99,24 +99,23 @@ int process_entry(const char *src_dir, const char *dst_dir, const char *name) {
     if (S_ISREG(stat_buf.st_mode)) {
         return create_task(copy_file, src_path, dst_path);
     }
-    return 0;
+    return SUCCESS;
 }
 
 void *copy_file(void *arg) {
     thread_args_t *args = (thread_args_t *)arg;
     char buffer[BUFFER_SIZE];
     struct stat src_stat;
-    int src_fd = -1, dst_fd = -1;
     int err = lstat(args->src_path, &src_stat);
-    if (err != 0) {
+    if (err != SUCCESS) {
         fprintf(stderr, "Error stating path: %s\n", args->src_path);
         goto cleanup;
     }
 
-    src_fd = open_with_retry(args->src_path, O_RDONLY, 0);
-    if (src_fd == -1) goto cleanup;
-    dst_fd = open_with_retry(args->dst_path, O_WRONLY | O_CREAT | O_TRUNC, src_stat.st_mode);
-    if (dst_fd == -1) goto cleanup;
+    int src_fd = open_with_retry(args->src_path, O_RDONLY, 0);
+    if (src_fd == ERROR) goto cleanup;
+    int dst_fd = open_with_retry(args->dst_path, O_WRONLY | O_CREAT | O_TRUNC, src_stat.st_mode);
+    if (dst_fd == ERROR) goto cleanup;
 
     ssize_t bytes_read = read(src_fd, buffer, BUFFER_SIZE);
     while (bytes_read > 0) {
@@ -124,7 +123,7 @@ void *copy_file(void *arg) {
         ssize_t remaining = bytes_read;
         while (remaining > 0) {
             ssize_t written = write(dst_fd, ptr, (size_t)remaining);
-            if (written == -1) {
+            if (written == ERROR) {
                 fprintf(stderr, "Error writing to file: %s\n", args->dst_path);
                 goto cleanup;
             }
@@ -133,13 +132,13 @@ void *copy_file(void *arg) {
         }
         bytes_read = read(src_fd, buffer, BUFFER_SIZE);
     }
-    if (bytes_read == -1) {
+    if (bytes_read == ERROR) {
         fprintf(stderr, "Error reading from file: %s\n", args->dst_path);
     }
 
     cleanup:
-        if (src_fd != -1) close(src_fd);
-    if (dst_fd != -1) close(dst_fd);
+    if (src_fd != ERROR) close(src_fd);
+    if (dst_fd != ERROR) close(dst_fd);
     thread_args_free(args);
     return NULL;
 }
@@ -150,13 +149,13 @@ void *copy_dir(void *arg) {
     struct stat src_stat;
 
     int err = lstat(args->src_path, &src_stat);
-    if (err != 0) {
+    if (err != SUCCESS) {
         fprintf(stderr, "Error stating path: %s\n", args->src_path);
         goto cleanup;
     }
 
     err = mkdir(args->dst_path, src_stat.st_mode);
-    if (err != 0 && errno != EEXIST) {
+    if (err != SUCCESS && errno != EEXIST) {
         fprintf(stderr, "Error creating directory: %s\n", args->dst_path);
         goto cleanup;
     }
@@ -166,11 +165,13 @@ void *copy_dir(void *arg) {
 
     struct dirent *entry;
     while (1) {
+        errno = SUCCESS;
         entry = readdir(dir);
-        if (entry == NULL) break;
-        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
-            continue;
+        if (entry == NULL) {
+            if (errno != SUCCESS) fprintf(stderr, "Error reading directory: %s\n", args->src_path);
+            break;
         }
+        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) continue;
         process_entry(args->src_path, args->dst_path, entry->d_name);
     }
 

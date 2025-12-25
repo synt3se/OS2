@@ -5,16 +5,16 @@ int get_realpath(const char* relative_path, char* full_path) {
     char* resolved_path = realpath(relative_path, full_path);
     if (resolved_path == NULL) {
         fprintf(stderr, "Error resolving path: %s", relative_path);
-        return EXIT_FAILURE;
+        return ERROR;
     }
-    return EXIT_SUCCESS;
+    return SUCCESS;
 }
 
 int build_path(char *dst, size_t size, const char *dir, const char *name) {
     int len = snprintf(dst, size, "%s/%s", dir, name);
     if (len < 0 || (size_t)len >= size) {
         fprintf(stderr, "Error creating path: %s/%s\n", dir, name);
-        return -1;
+        return ERROR;
     }
     return 0;
 }
@@ -22,13 +22,13 @@ int build_path(char *dst, size_t size, const char *dir, const char *name) {
 int is_dir(const char *path) {
     struct stat stat_buf;
     int err = lstat(path, &stat_buf);
-    if (err != 0) {
+    if (err != SUCCESS) {
         fprintf(stderr, "Error stating path: %s\n", path);
-        return -1;
+        return ERROR;
     }
     if (!S_ISDIR(stat_buf.st_mode)) {
         fprintf(stderr, "%s is not a directory\n", path);
-        return -1;
+        return ERROR;
     }
     return 0;
 }
@@ -37,15 +37,15 @@ int open_with_retry(const char *path, int flags, mode_t mode) {
     int fd;
     for (int i = 0; i < MAX_RETRIES; i++) {
         fd = open(path, flags, mode);
-        if (fd != -1) return fd;
+        if (fd != ERROR) return fd;
         if (errno != EMFILE) {
             fprintf(stderr, "Error opening file: %s\n", path);
-            return -1;
+            return ERROR;
         }
         sleep(1);
     }
     fprintf(stderr, "open '%s': max retries exceeded\n", path);
-    return -1;
+    return ERROR;
 }
 
 DIR *opendir_with_retry(const char *path) {
@@ -61,10 +61,4 @@ DIR *opendir_with_retry(const char *path) {
     }
     fprintf(stderr, "opendir '%s': max retries exceeded\n", path);
     return NULL;
-}
-
-size_t get_dirent_size(const char *dirpath) {
-    long name_max = pathconf(dirpath, _PC_NAME_MAX);
-    if (name_max == -1) name_max = 255;
-    return sizeof(struct dirent) + (size_t)name_max + 1;
 }

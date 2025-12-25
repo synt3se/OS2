@@ -12,23 +12,9 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    pthread_attr_t attr;
-    int err = pthread_attr_init(&attr);
-    if (err != 0) {
-        fprintf(stderr, "pthread_attr_init: %s\n", strerror(err));
-        thread_args_free(args);
-        return EXIT_FAILURE;
-    }
-
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-
-    pthread_t tid;
-    err = pthread_create(&tid, &attr, copy_dir, args);
-    pthread_attr_destroy(&attr);
-
-    if (err != 0) {
-        fprintf(stderr, "pthread_create: %s\n", strerror(err));
-        thread_args_free(args);
+    int err = create_task(copy_dir, args->src_path, args->dst_path);
+    thread_args_free(args);
+    if (err != SUCCESS) {
         return EXIT_FAILURE;
     }
 
