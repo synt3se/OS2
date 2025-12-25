@@ -16,7 +16,7 @@ int build_path(char *dst, size_t size, const char *dir, const char *name) {
         fprintf(stderr, "Error creating path: %s/%s\n", dir, name);
         return ERROR;
     }
-    return 0;
+    return SUCCESS;
 }
 
 int is_dir(const char *path) {
@@ -30,7 +30,7 @@ int is_dir(const char *path) {
         fprintf(stderr, "%s is not a directory\n", path);
         return ERROR;
     }
-    return 0;
+    return SUCCESS;
 }
 
 int open_with_retry(const char *path, int flags, mode_t mode) {

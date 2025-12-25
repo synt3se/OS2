@@ -61,14 +61,14 @@ int create_task(void *(*routine)(void *), const char *src, const char *dst) {
 
     pthread_attr_t attr;
     int err = pthread_attr_init(&attr);
-    if (err != 0) {
+    if (err != SUCCESS) {
         fprintf(stderr, "pthread_attr_init: %s\n", strerror(err));
         thread_args_free(args);
         return ERROR;
     }
 
     err = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-    if (err != 0) {
+    if (err != SUCCESS) {
         fprintf(stderr, "pthread_attr_setdetachstate: %s\n", strerror(err));
         thread_args_free(args);
         pthread_attr_destroy(&attr);
@@ -176,7 +176,7 @@ void *copy_dir(void *arg) {
         entry = readdir(dir);
         if (errno != SUCCESS) fprintf(stderr, "Error reading directory: %s\n", args->src_path);
         if (entry == NULL) break;
-        if (strcmp(entry->d_name, CURR_DIR) == 0 || strcmp(entry->d_name, PARENT_DIR) == 0) continue;
+        if (strcmp(entry->d_name, CURR_DIR) == SUCCESS || strcmp(entry->d_name, PARENT_DIR) == SUCCESS) continue;
         process_entry(args->src_path, args->dst_path, entry->d_name);
     }
 
