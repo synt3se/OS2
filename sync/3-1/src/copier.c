@@ -3,6 +3,9 @@
 #include <fcntl.h>
 #include <dirent.h>
 
+#define CURR_DIR "."
+#define PARENT_DIR ".."
+
 thread_args_t *init_args(const char *src, const char *dst) {
     char src_path[PATH_MAX];
     char dst_dir[PATH_MAX];
@@ -64,18 +67,22 @@ int create_task(void *(*routine)(void *), const char *src, const char *dst) {
         return ERROR;
     }
 
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    err = pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+    if (err != 0) {
+        fprintf(stderr, "pthread_attr_setdetachstate: %s\n", strerror(err));
+        thread_args_free(args);
+        pthread_attr_destroy(&attr);
+        return ERROR;
+    }
 
     pthread_t thread;
     err = pthread_create(&thread, &attr, routine, args);
     pthread_attr_destroy(&attr);
-
     if (err != SUCCESS) {
         fprintf(stderr, "pthread_create: %s\n", strerror(err));
         thread_args_free(args);
         return ERROR;
     }
-
     return SUCCESS;
 }
 
@@ -167,11 +174,9 @@ void *copy_dir(void *arg) {
     while (1) {
         errno = SUCCESS;
         entry = readdir(dir);
-        if (entry == NULL) {
-            if (errno != SUCCESS) fprintf(stderr, "Error reading directory: %s\n", args->src_path);
-            break;
-        }
-        if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) continue;
+        if (errno != SUCCESS) fprintf(stderr, "Error reading directory: %s\n", args->src_path);
+        if (entry == NULL) break;
+        if (strcmp(entry->d_name, CURR_DIR) == 0 || strcmp(entry->d_name, PARENT_DIR) == 0) continue;
         process_entry(args->src_path, args->dst_path, entry->d_name);
     }
 
